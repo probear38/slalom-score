@@ -5,7 +5,7 @@ function compute(s){
   const tricks=s.log.filter(e=>e.type==='trick'&&e.valid!==false);
   const fams=new Set(tricks.map(t=>t.family));
   const missing=Object.keys(FAMILIES).filter(f=>!fams.has(f));
-  const rows=new Set(tricks.map(t=>t.row));
+  const rows=new Set(tricks.map(t=>t.row).filter(r=>['50','80','120'].includes(r)));
   const missTricks=Math.max(0,8-tricks.length);
   const tech=Math.min(60,Math.max(10,+s.tech||10));
   const art=Math.min(70,Math.max(0,+s.art||0));

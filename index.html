@@ -10,10 +10,15 @@
  <div class="row"><label class="btn">📷 錄影<input type="file" accept="video/*" capture="environment" id="camIn" hidden></label>
  <label class="btn">🖼 選影片<input type="file" accept="video/*" id="picIn" hidden></label>
  <button class="btn" id="liveBtn">⏺ 即時錄影</button></div>
- <video id="vid" playsinline controls></video>
+ <div id="vwrap"><video id="vid" playsinline controls></video><canvas id="ovl"></canvas></div>
  <div class="row"><button class="btn sm" data-seek="-5">-5s</button><button class="btn sm" data-seek="-1">-1s</button><button class="btn sm" id="playBtn">▶︎/⏸</button><button class="btn sm" data-seek="1">+1s</button><button class="btn sm" data-seek="5">+5s</button></div>
  <input type="range" id="scrub" min="0" max="1000" value="0"><div id="tnow">0.0s</div>
  <div class="row"><button class="btn" id="musicBtn">🎵 標記音樂開始</button><button class="btn" id="endBtn">🏁 標記結束</button></div>
+ <div class="card" id="aiBox"><div class="row"><button class="btn" id="aiBtn">🤖 自動分析</button><button class="btn ghost" id="aiCancel" hidden>取消</button></div>
+ <progress id="aiProg" max="1" value="0" hidden></progress><div id="aiMsg"><small>在手機上分析，影片不會上傳。AI 標記需人工確認。</small></div>
+ <label><input type="checkbox" id="ovlOn"> 播放時顯示骨架</label>
+ <details><summary>⚙️ 偵測門檻設定</summary><div id="aiSet"></div><button class="btn sm" id="aiReset">恢復預設</button></details>
+ <div id="aiSum"></div></div>
  <h3>樁排</h3><div class="row seg" id="rowSel"><button data-v="50" class="on">50cm</button><button data-v="80">80cm</button><button data-v="120">120cm</button></div>
  <h3>記錄動作</h3><div class="grid" id="trickBtns"></div>
  <h3>記錄失誤</h3><div class="grid" id="faultBtns"></div>
@@ -42,4 +47,4 @@
 </section>
 </main>
 <div id="liveBox" hidden><video id="liveV" playsinline muted autoplay></video><button class="btn" id="stopLive">⏹ 停止錄影</button></div>
-<script src="score.js"></script><script src="app.js"></script></body></html>
+<script src="score.js"></script><script src="pose.js"></script><script src="app.js"></script><script src="ai.js"></script></body></html>

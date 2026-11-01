@@ -32,7 +32,7 @@ $('#rowSel').onclick=e=>{if(!e.target.dataset.v)return;row=e.target.dataset.v;[.
 for(const[k,n]of Object.entries(FAMILIES)){const b=document.createElement('button');b.textContent=n;b.style.background=COL[k];b.onclick=()=>{const name=prompt(n+' 動作名稱（可留空）','')??'';add({type:'trick',family:k,row,name})};$('#trickBtns').append(b)}
 for(const[k,f]of Object.entries(FAULTS)){const b=document.createElement('button');b.textContent=f.n;b.style.background='#c62828';b.onclick=()=>{let v=f.d;if(k=='balance')v=+prompt('失衡扣分 0.5–1.5','1')||1;if(k=='fall')v=+prompt('摔倒扣分 2–5','3')||3;if(k=='gap')v=+prompt('漏了幾個樁間？','1')||1;add({type:'fault',fault:k,row,value:v})};$('#faultBtns').append(b)}
 function add(e){e.t=+V.currentTime.toFixed(1);st.log.push(e);st.log.sort((a,b)=>a.t-b.t);save();render();navigator.vibrate&&navigator.vibrate(30)}
-function label(e){return e.type=='trick'?`🟢 ${FAMILIES[e.family]}${e.name?'·'+e.name:''} (${e.row}cm)${e.valid===false?' ✗無效':''}`:`🔴 ${FAULTS[e.fault].n} ${e.fault=='gap'?e.value+'個':'-'+e.value} (${e.row}cm)`}
+function label(e){return (e.ai?'<span class="aitag">AI</span> ':'')+(e.type=='trick'?`🟢 ${FAMILIES[e.family]}${e.name?'·'+e.name:''} (${e.row}cm)${e.valid===false?' ✗無效':''}`:`🔴 ${FAULTS[e.fault].n} ${e.fault=='gap'?e.value+'個':'-'+e.value} (${e.row}cm)`)}
 // sheet
 ['name','duration','tech','art','notes','coach'].forEach(k=>$('#'+k).oninput=e=>{st[k]=e.target.value;save();render(true)});
 function render(skipInputs){
@@ -40,6 +40,7 @@ function render(skipInputs){
   $('#techV').textContent=st.tech;$('#artV').textContent=st.art;
   const r=compute(st);
   $('#log').innerHTML='';st.log.forEach((e,i)=>{const li=document.createElement('li');li.innerHTML=`<span><b>${fmt(e.t)}</b> ${label(e)}</span><span></span>`;li.onclick=()=>{V.currentTime=e.t};const btns=li.lastChild;
+   if(e.ai){const k=document.createElement('button');k.textContent='✓確認';k.onclick=ev=>{ev.stopPropagation();delete e.ai;save();render()};btns.append(k)}
    if(e.type=='trick'){const v=document.createElement('button');v.textContent='有效?';v.onclick=ev=>{ev.stopPropagation();e.valid=e.valid===false;save();render()};btns.append(v)}
    const d=document.createElement('button');d.textContent='🗑';d.onclick=ev=>{ev.stopPropagation();st.log.splice(i,1);save();render()};btns.append(d);$('#log').append(li)});
   const c=(ok,t)=>`<div class="${ok?'ok':'bad'}">${ok?'✅':'⚠️'} ${t}</div>`;
@@ -65,5 +66,6 @@ function renderHist(){const h=hist();$('#histList').innerHTML='';h.slice().rever
   g.fillStyle='#0b3d91';h.forEach((s,i)=>{const x=50+(h.length==1?0:i/(h.length-1))*(w-80),y=H-20-s.result.total/130*(H-40);g.beginPath();g.arc(x,y,7,0,7);g.fill();g.fillText(s.result.total,x-15,y-14)})}
 $('#expBtn').onclick=async()=>{const txt=JSON.stringify({hist:hist(),cur:st},null,1),f=new File([txt],'slalom-'+new Date().toISOString().slice(0,10)+'.json',{type:'application/json'});if(navigator.canShare&&navigator.canShare({files:[f]}))return navigator.share({files:[f]}).catch(()=>{});const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=f.name;a.click()};
 $('#impIn').onchange=async e=>{try{const j=JSON.parse(await e.target.files[0].text());const arr=j.hist||(Array.isArray(j)?j:[]);const m=new Map(hist().map(x=>[x.id,x]));arr.forEach(x=>{x.result=x.result||compute(x);m.set(x.id,x)});localStorage.setItem('hist',JSON.stringify([...m.values()].sort((a,b)=>a.date<b.date?-1:1)));render();alert('匯入 '+arr.length+' 筆')}catch(err){alert('匯入失敗')}};
+window.App={get st(){return st},save,render};
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
 render();
