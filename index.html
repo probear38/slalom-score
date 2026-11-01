@@ -18,6 +18,9 @@
  <progress id="aiProg" max="1" value="0" hidden></progress><div id="aiMsg"><small>在手機上分析，影片不會上傳。AI 標記需人工確認。</small></div>
  <label><input type="checkbox" id="ovlOn"> 播放時顯示骨架</label>
  <details><summary>⚙️ 偵測門檻設定</summary><div id="aiSet"></div><button class="btn sm" id="aiReset">恢復預設</button></details>
+ <details><summary>🟠 樁位偵測（踢樁／漏樁）</summary><small>需固定腳架、三排樁都在畫面內。先暫停在沒有人擋住樁的畫面。</small>
+ <div class="row"><button class="btn sm" id="coneSample">1. 點選一個樁取色</button><button class="btn sm" id="coneDetect">2. 偵測樁位</button></div>
+ <label><input type="checkbox" id="conePrev" checked> 顯示樁位預覽</label><div id="coneMsg"></div></details>
  <div id="aiSum"></div></div>
  <h3>樁排</h3><div class="row seg" id="rowSel"><button data-v="50" class="on">50cm</button><button data-v="80">80cm</button><button data-v="120">120cm</button></div>
  <h3>記錄動作</h3><div class="grid" id="trickBtns"></div>
@@ -43,8 +46,8 @@
 </section>
 <section id="hist" hidden>
  <canvas id="chart" height="200"></canvas><ul id="histList"></ul>
- <div class="row"><button class="btn" id="expBtn">匯出 JSON</button><label class="btn">匯入 JSON<input type="file" accept="application/json,.json" id="impIn" hidden></label></div>
+ <div class="row"><button class="btn" id="expBtn">匯出 JSON</button><label class="btn">匯入 JSON<input type="file" accept="application/json,.json" id="impIn" hidden></label></div><div class="row"><button class="btn" id="snipExp">匯出姿勢片段（訓練用）</button></div><div id="snipMsg"></div>
 </section>
 </main>
 <div id="liveBox" hidden><video id="liveV" playsinline muted autoplay></video><button class="btn" id="stopLive">⏹ 停止錄影</button></div>
-<script src="score.js"></script><script src="pose.js"></script><script src="app.js"></script><script src="ai.js"></script></body></html>
+<script src="score.js"></script><script src="pose.js"></script><script src="cones.js"></script><script src="app.js"></script><script src="ai.js"></script></body></html>

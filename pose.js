@@ -1,10 +1,10 @@
 // 姿勢啟發式分析（純函式，瀏覽器與 node 共用）。座標為 0–1 正規化，y 向下。
-const AI_DEFAULTS={sitMargin:0.0,sitMin:0.5,jumpThr:0.06,jumpMinGap:0.6,spinDeg:330,spinWin:2.5,fallTorso:0.22,fallDrop:1.2,wobbleThr:2.5,armThr:3.5,motionThr:0.15,motionMin:1.0,minVis:0.4};
+const AI_DEFAULTS={sitMargin:0.0,sitMin:0.5,jumpThr:0.06,jumpMinGap:0.6,spinDeg:330,spinWin:2.5,fallTorso:0.22,fallDrop:1.2,wobbleThr:2.5,armThr:3.5,motionThr:0.15,motionMin:1.0,minVis:0.4,crossMin:2,crossWin:3,snakeStag:0.2,snakeMin:1.0,wheelLift:0.05,wheelMin:0.6};
 const L={nose:0,ls:11,rs:12,lw:15,rw:16,lh:23,rh:24,lk:25,rk:26,la:27,ra:28};
 const med=a=>{const s=a.filter(Number.isFinite).sort((x,y)=>x-y);return s.length?s[s.length>>1]:NaN};
 function feats(f,minVis){const g=i=>f.lm&&f.lm[i];const ok=[L.ls,L.rs,L.lh,L.rh,L.lk,L.rk,L.la,L.ra].every(i=>g(i)&&(g(i).visibility??1)>=minVis);if(!ok)return null;
  const m=(a,b,k)=>(g(a)[k]+g(b)[k])/2;
- return{t:f.t,hipY:m(L.lh,L.rh,'y'),kneeY:m(L.lk,L.rk,'y'),shY:m(L.ls,L.rs,'y'),la:g(L.la).y,ra:g(L.ra).y,ankY:m(L.la,L.ra,'y'),
+ return{t:f.t,hipY:m(L.lh,L.rh,'y'),kneeY:m(L.lk,L.rk,'y'),shY:m(L.ls,L.rs,'y'),la:g(L.la).y,ra:g(L.ra).y,lax:g(L.la).x,rax:g(L.ra).x,ankY:m(L.la,L.ra,'y'),
   cx:(m(L.lh,L.rh,'x')+m(L.ls,L.rs,'x'))/2,cy:(m(L.lh,L.rh,'y')+m(L.ls,L.rs,'y'))/2,
   ang:Math.atan2((g(L.rs).z||0)-(g(L.ls).z||0),(g(L.rs).wx??g(L.rs).x)-(g(L.ls).wx??g(L.ls).x)),hasZ:g(L.ls).z!=null,
   lw:g(L.lw),rw:g(L.rw),noseY:g(L.nose)?g(L.nose).y:NaN}}
@@ -15,7 +15,7 @@ function analyze(frames,opt={}){
  // 速度序列（以身高/秒為單位）
  const ser=F.map((f,i)=>{if(!i)return{t:f.t,v:0,cx:f.cx,cy:f.cy};const p=F[i-1],dt=Math.max(1e-3,f.t-p.t);return{t:f.t,v:Math.hypot(f.cx-p.cx,f.cy-p.cy)/H/dt,cx:f.cx,cy:f.cy,vx:(f.cx-p.cx)/H/dt}});
  // 蹲坐：髖低於膝（y 較大）持續
- let s0=null;F.forEach((f,i)=>{const sit=f.hipY>=f.kneeY-o.sitMargin*H;if(sit&&s0==null)s0=f.t;if((!sit||i==F.length-1)&&s0!=null){const e=sit?f.t:F[i-1].t;if(e-s0>=o.sitMin)ev.push({t:+s0.toFixed(1),type:'trick',family:'sit',ai:true,dur:+(e-s0).toFixed(1)});s0=null}});
+ let s0=null;F.forEach((f,i)=>{const sit=f.hipY>=f.kneeY-o.sitMargin*H;if(sit&&s0==null)s0=f.t;if((!sit||i==F.length-1)&&s0!=null){const e=sit?f.t:F[i-1].t;if(e-s0>=o.sitMin){const seg=F.filter(q=>q.t>=s0&&q.t<=e),lift=seg.filter(q=>Math.abs(q.la-q.ra)>o.wheelLift*H).length/seg.length;ev.push({t:+s0.toFixed(1),type:'trick',family:'sit',ai:true,dur:+(e-s0).toFixed(1),name:lift>0.5?'單腳蹲（槍式）':'雙腳蹲坐'})}s0=null}});
  // 跳躍：雙踝同時高於基準線（前 2 秒踝位中位數）
  let lastJ=-9;F.forEach((f,i)=>{const w=F.slice(0,i).filter(p=>f.t-p.t<=2);if(w.length<3)return;const base=med(w.map(p=>Math.max(p.la,p.ra)));
   if(base-f.la>o.jumpThr*H&&base-f.ra>o.jumpThr*H&&f.t-lastJ>=o.jumpMinGap){ev.push({t:+f.t.toFixed(1),type:'trick',family:'jump',ai:true});lastJ=f.t}});
@@ -32,11 +32,25 @@ function analyze(frames,opt={}){
  // 開始／結束：持續移動
  const mov=ser.map(s=>s.v>o.motionThr);let start=null,end=null;
  for(let i=0;i<F.length;i++){let j=i;while(j<F.length&&mov[j])j++;if(j>i&&F[j-1].t-F[i].t>=o.motionMin){if(start==null)start=F[i].t;end=F[j-1].t}i=j}
- ev.sort((a,b)=>a.t-b.t);return{events:ev,series:ser.map(s=>({t:+s.t.toFixed(2),v:+s.v.toFixed(3),cx:+s.cx.toFixed(3),cy:+s.cy.toFixed(3)})),start,end,bodyH:H,frames:F.length};
+ ev.push(...tricks(F,ser,H,o,ev));ev.sort((a,b)=>a.t-b.t);return{events:ev,series:ser.map(s=>({t:+s.t.toFixed(2),v:+s.v.toFixed(3),cx:+s.cx.toFixed(3),cy:+s.cy.toFixed(3)})),start,end,bodyH:H,frames:F.length};
 }
+// 招式名稱規則：交叉、蛇形、單輪/單腳提示
+function tricks(F,ser,H,o,prev){const out=[],sitAt=t=>prev.some(e=>e.family=='sit'&&t>=e.t&&t<=e.t+(e.dur||0));
+ const ground=f=>Math.abs(f.la-f.ra)<=o.wheelLift*H,mv=i=>ser[i].v>o.motionThr;
+ // 交叉：兩踝左右順序互換（雙腳著地）
+ const X=[];let sg=0;F.forEach(f=>{if(!ground(f))return;const d=f.lax-f.rax;if(Math.abs(d)<0.02*H)return;const s=Math.sign(d);if(sg&&s!=sg)X.push(f.t);sg=s});
+ for(let i=0;i<X.length;){let j=i;while(j+1<X.length&&X[j+1]-X[i]<=o.crossWin)j++;if(j-i+1>=o.crossMin){out.push({t:+X[i].toFixed(1),type:'trick',family:'other',name:'交叉 Cross',ai:true,dur:+(X[j]-X[i]).toFixed(1)});i=j+1}else i++}
+ const runs=(test,min,mk)=>{let a=null;F.forEach((f,i)=>{const ok=test(f,i);if(ok&&a==null)a=f.t;if((!ok||i==F.length-1)&&a!=null){const e=ok?f.t:F[i-1].t;if(e-a>=min)out.push(mk(a,e));a=null}})};
+ // 蛇形：雙腳著地、前後錯開、移動中、無交叉
+ runs((f,i)=>ground(f)&&Math.abs(f.lax-f.rax)>o.snakeStag*H&&mv(i)&&!X.some(x=>Math.abs(x-f.t)<0.3),o.snakeMin,(a,e)=>({t:+a.toFixed(1),type:'trick',family:'other',name:'蛇形 Snake',ai:true,dur:+(e-a).toFixed(1)}));
+ // 單輪/單腳提示：一腳抬起、移動中、非蹲坐
+ runs((f,i)=>!ground(f)&&mv(i)&&!sitAt(f.t),o.wheelMin,(a,e)=>({t:+a.toFixed(1),type:'trick',family:'wheel',name:'單腳/單輪（可能）',ai:true,dur:+(e-a).toFixed(1)}));
+ return out}
+// 匯出姿勢片段給日後訓練分類器
+function snippet(frames,t0,t1){const K=[0,11,12,13,14,15,16,23,24,25,26,27,28];return frames.filter(f=>f.t>=t0&&f.t<=t1).map(f=>({t:+(f.t-t0).toFixed(2),k:K.map(i=>f.lm[i]?[+f.lm[i].x.toFixed(3),+f.lm[i].y.toFixed(3),+(f.lm[i].z||0).toFixed(3),+(f.lm[i].visibility??1).toFixed(2)]:null)}))}
 function refScores(res,dur){const c={sit:0,jump:0,spin:0,fall:0,balance:0};res.events.forEach(e=>c[e.family||e.fault]++);
  const fams=['sit','jump','spin'].filter(k=>c[k]).length;const moving=res.series.length?res.series.filter(s=>s.v>0.15).length/res.series.length:0;
  const tech=Math.max(10,Math.min(60,15+2*(c.sit+c.jump+c.spin)+4*fams-2*c.fall-0.5*c.balance));
  const art=Math.max(0,Math.min(70,20+35*moving-3*c.fall-c.balance+(dur>=105&&dur<=120?5:0)));
  const r=v=>Math.round(v);return{counts:c,tech:[r(Math.max(10,tech-6)),r(Math.min(60,tech+6))],art:[r(Math.max(0,art-8)),r(Math.min(70,art+8))]}}
-if(typeof module!=='undefined')module.exports={analyze,refScores,AI_DEFAULTS};
+if(typeof module!=='undefined')module.exports={analyze,refScores,AI_DEFAULTS,snippet};
