@@ -1,0 +1,45 @@
+<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="花樁評分">
+<meta name="theme-color" content="#0b3d91"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-180.png">
+<title>花式繞樁評分</title><link rel="stylesheet" href="app.css"></head><body>
+<header><h1>花式繞樁評分</h1><nav>
+<button data-tab="video" class="on">影片</button><button data-tab="sheet">評分表</button><button data-tab="fix">缺失改進</button><button data-tab="hist">進步紀錄</button></nav></header>
+<main>
+<section id="video">
+ <div class="row"><label class="btn">📷 錄影<input type="file" accept="video/*" capture="environment" id="camIn" hidden></label>
+ <label class="btn">🖼 選影片<input type="file" accept="video/*" id="picIn" hidden></label>
+ <button class="btn" id="liveBtn">⏺ 即時錄影</button></div>
+ <video id="vid" playsinline controls></video>
+ <div class="row"><button class="btn sm" data-seek="-5">-5s</button><button class="btn sm" data-seek="-1">-1s</button><button class="btn sm" id="playBtn">▶︎/⏸</button><button class="btn sm" data-seek="1">+1s</button><button class="btn sm" data-seek="5">+5s</button></div>
+ <input type="range" id="scrub" min="0" max="1000" value="0"><div id="tnow">0.0s</div>
+ <div class="row"><button class="btn" id="musicBtn">🎵 標記音樂開始</button><button class="btn" id="endBtn">🏁 標記結束</button></div>
+ <h3>樁排</h3><div class="row seg" id="rowSel"><button data-v="50" class="on">50cm</button><button data-v="80">80cm</button><button data-v="120">120cm</button></div>
+ <h3>記錄動作</h3><div class="grid" id="trickBtns"></div>
+ <h3>記錄失誤</h3><div class="grid" id="faultBtns"></div>
+ <h3>紀錄（點擊跳轉）</h3><ul id="log"></ul>
+</section>
+<section id="sheet" hidden>
+ <div class="card" id="checks"></div>
+ <label>選手／備註名稱<input id="name"></label>
+ <label>表演時間（秒，自動由標記計算）<input id="duration" type="number" step="0.1"></label>
+ <label>技術分 10–60：<b id="techV"></b><input id="tech" type="range" min="10" max="60" step="0.5" value="30"></label>
+ <small>難度、步伐、多樣性、連貫性、速度與節奏</small>
+ <label>藝術分 0–70：<b id="artV"></b><input id="art" type="range" min="0" max="70" step="0.5" value="35"></label>
+ <small>肢體表達、音樂表達、動作編排；樁外表演過多請酌減</small>
+ <div class="card" id="totals"></div>
+ <button class="btn wide" id="saveBtn">💾 儲存本次</button> <button class="btn wide ghost" id="newBtn">新的一場</button>
+</section>
+<section id="fix" hidden>
+ <div id="sugg"></div>
+ <label>我的筆記<textarea id="notes" rows="4"></textarea></label>
+ <label>教練分析（貼上文字或 JSON）<textarea id="coach" rows="6" placeholder='可貼純文字，或 {"tech":40,"art":45,"duration":113,"log":[...],"coach":"..."}'></textarea></label>
+ <button class="btn wide" id="importCoach">匯入 JSON 到本場</button>
+</section>
+<section id="hist" hidden>
+ <canvas id="chart" height="200"></canvas><ul id="histList"></ul>
+ <div class="row"><button class="btn" id="expBtn">匯出 JSON</button><label class="btn">匯入 JSON<input type="file" accept="application/json,.json" id="impIn" hidden></label></div>
+</section>
+</main>
+<div id="liveBox" hidden><video id="liveV" playsinline muted autoplay></video><button class="btn" id="stopLive">⏹ 停止錄影</button></div>
+<script src="score.js"></script><script src="app.js"></script></body></html>

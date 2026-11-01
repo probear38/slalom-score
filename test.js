@@ -1,0 +1,10 @@
+const {compute}=require('./score.js');const a=require('assert');
+let s={tech:40,art:45,duration:112,log:[]};
+let r=compute(s);a.equal(r.missTricks,8);a.equal(r.techDed,16+15);a.equal(r.total,85-31);
+const fs=['sit','jump','spin','wheel','other','sit','spin','wheel'];
+s.log=fs.map((f,i)=>({type:'trick',family:f,row:['50','80','120'][i%3]}));
+r=compute(s);a.equal(r.techDed,0);a.ok(r.rowsOk);a.equal(r.total,85);
+s.log.push({type:'fault',fault:'kick',value:1},{type:'fault',fault:'kick',value:1},{type:'fault',fault:'balance',value:3},{type:'fault',fault:'fall',value:1},{type:'fault',fault:'gap',value:6});
+r=compute(s);a.equal(r.pen,2+1.5+2+5);a.equal(r.total,85-10.5);
+s.duration=100;r=compute(s);a.equal(r.pen,20.5);a.equal(compute({tech:99,art:99,log:[]}).tech,60);
+console.log('all score tests passed');
